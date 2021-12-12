@@ -95,7 +95,6 @@ class RepresentationNetwork(nn.Module):
 class DynamicsNetwork(nn.Module):
     def __init__(
         self,
-        num_blocks,
         num_channels,
         fc_reward_layers,
         full_support_size,
@@ -106,8 +105,6 @@ class DynamicsNetwork(nn.Module):
         """Dynamics network
         Parameters
         ----------
-        num_blocks: int
-            number of res blocks
         num_channels: int
             channels of hidden states
         fc_reward_layers: list
@@ -206,6 +203,8 @@ class EfficientZeroNet(BaseNet):
         num_obs_channels,
         action_space_size,
         num_channels,
+        num_layers,
+        num_hidden,
         fc_reward_layers,
         fc_value_layers,
         fc_policy_layers,

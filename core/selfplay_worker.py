@@ -110,7 +110,7 @@ class DataWorker(object):
 
         start_training = False
         envs = [self.config.new_game(self.config.seed + self.rank * i) for i in range(env_nums)]
-
+        print('\nHELLO\n')
         def _get_max_entropy(action_space):
             p = 1.0 / action_space
             ep = - action_space * p * np.log2(p)
@@ -123,15 +123,18 @@ class DataWorker(object):
         with torch.no_grad():
             while True:
                 trained_steps = ray.get(self.storage.get_counter.remote())
+                print(f'{trained_steps = }')
                 # training finished
                 if trained_steps >= self.config.training_steps + self.config.last_steps:
                     time.sleep(30)
                     break
 
                 init_obses = [env.reset() for env in envs]
+                print(f'{init_obses = }')
                 dones = np.array([False for _ in range(env_nums)])
                 game_histories = [GameHistory(envs[_].env.action_space, max_length=self.config.history_length,
                                               config=self.config) for _ in range(env_nums)]
+                print(f'{game_histories = }')
                 last_game_histories = [None for _ in range(env_nums)]
                 last_game_priorities = [None for _ in range(env_nums)]
 
@@ -162,7 +165,13 @@ class DataWorker(object):
                 other_dist = {}
 
                 # play games until max moves
+                print(f'{dones = }')
+                print(f'{step_counter = }')
+                print(f'{self.config.max_moves = }')
                 while not dones.all() and (step_counter <= self.config.max_moves):
+                    print(f'{step_counter = }')
+                    print(f'{self.config.max_moves = }')
+
                     if not start_training:
                         start_training = ray.get(self.storage.get_start_signal.remote())
 

@@ -236,6 +236,23 @@ def make_atari(env_id, skip=4, max_episode_steps=None):
         env = TimeLimit(env, max_episode_steps=max_episode_steps)
     return env
 
+def make_cartpole(env_id, skip=4, max_episode_steps=None):
+    """Make Cartpole
+    Parameters
+    ----------
+    env_id: str
+        name of environment
+    skip: int
+        frame skip
+    max_episode_steps: int
+        max moves for an episode
+    """
+    env = gym.make(env_id)
+    # env = MaxAndSkipEnv(env, skip=skip)
+    # if max_episode_steps is not None:
+        # env = TimeLimit(env, max_episode_steps=max_episode_steps)
+    return env
+
 
 def set_seed(seed):
     # set seed

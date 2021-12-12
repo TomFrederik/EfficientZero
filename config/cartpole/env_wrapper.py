@@ -22,14 +22,17 @@ class CartPoleWrapper(Game):
         return [idx for idx in range(self.env.action_space.n)]
 
     def step(self, action):
+        logging.warning('taking step')
         observation, reward, done, info = self.env.step(action)
 
         return observation, reward, done, info
 
     def reset(self, **kwargs):
+        # logging.warning('resetting env')
         observation = self.env.reset(**kwargs)
 
         return observation
 
     def close(self):
+        logging.warning('closing env')
         self.env.close()

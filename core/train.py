@@ -358,9 +358,10 @@ def _train(model, target_model, replay_buffer, shared_storage, batch_storage, co
         config.set_transforms()
 
     # wait until collecting enough data to start
-    while not (ray.get(replay_buffer.get_total_len.remote()) >= config.start_transitions):
-        time.sleep(1)
-        pass
+    # while not (ray.get(replay_buffer.get_total_len.remote()) >= config.start_transitions):
+    #     time.sleep(1)
+    #     print(ray.get(replay_buffer.get_total_len.remote()))
+    #     pass
     print('Begin training...')
     # set signals for other workers
     shared_storage.set_start_signal.remote()
