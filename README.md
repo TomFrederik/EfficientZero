@@ -15,6 +15,10 @@ bash make.sh
 The distributed framework of this codebase is built on [ray](https://docs.ray.io/en/releases-1.0.0/auto_examples/overview.html).
 
 ### Installation
+For `atari-py` you'll need the following two packages (install command for Ubuntu, adjust accordingly)
+```
+sudo apt-get install zlib1g-dev cmake
+```
 As for other packages required for this codebase, please run `pip install -r requirements.txt`.
 
 ## Usage
