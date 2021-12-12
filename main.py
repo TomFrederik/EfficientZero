@@ -72,6 +72,8 @@ if __name__ == '__main__':
     # import corresponding configuration , neural networks and envs
     if args.case == 'atari':
         from config.atari import game_config
+    elif args.case == 'cartpole':
+        from config.cartpole import game_config
     else:
         raise Exception('Invalid --case option')
 

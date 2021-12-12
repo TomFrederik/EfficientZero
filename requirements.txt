@@ -1,5 +1,5 @@
 numpy==1.19.5
-ray==1.0.0
+ray # version 1.0.0 not found by pip
 gym==0.15.7
 atari-py==0.2.6
 cython==0.29.23
