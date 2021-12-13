@@ -47,9 +47,6 @@ class ReplayBuffer(object):
         priorities: list
             the priorities corresponding to the transitions in the game history
         """
-        print('ho')
-        print(f'{self.get_total_len() = }')
-        print(f'{self.config.total_transitions = }')
         if self.get_total_len() >= self.config.total_transitions:
             return
 
@@ -123,7 +120,6 @@ class ReplayBuffer(object):
 
     def update_priorities(self, batch_indices, batch_priorities, make_time):
         # update the priorities for data still in replay buffer
-        print('hi')
         for i in range(len(batch_indices)):
             if make_time[i] > self.clear_time:
                 idx, prio = batch_indices[i], batch_priorities[i]

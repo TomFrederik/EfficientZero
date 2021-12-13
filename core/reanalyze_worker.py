@@ -320,7 +320,6 @@ class BatchWorker_GPU(object):
                 else:
                     m_output = self.model.initial_inference(m_obs)
                 network_output.append(m_output)
-
             # concat the output slices after model inference
             if self.config.use_root_value:
                 # use the root values from MCTS
@@ -476,23 +475,30 @@ class BatchWorker_GPU(object):
     def _prepare_target_gpu(self):
         input_countext = self.mcts_storage.pop()
         if input_countext is None:
+            print(f'input_countext is None')
             time.sleep(1)
         else:
             reward_value_context, policy_re_context, policy_non_re_context, inputs_batch, target_weights = input_countext
             if target_weights is not None:
+                print('ha')
                 self.model.load_state_dict(target_weights)
                 self.model.to(self.config.device)
                 self.model.eval()
+                print('he')
 
             # target reward, value
+            # print(f'{reward_value_context = }')
             batch_value_prefixs, batch_values = self._prepare_reward_value(reward_value_context)
+            print(f'{batch_value_prefixs.shape = }')
             # target policy
             batch_policies_re = self._prepare_policy_re(policy_re_context)
             batch_policies_non_re = self._prepare_policy_non_re(policy_non_re_context)
             batch_policies = np.concatenate([batch_policies_re, batch_policies_non_re])
+            print(f'{batch_policies.shape = }')
 
             targets_batch = [batch_value_prefixs, batch_values, batch_policies]
             # a batch contains the inputs and the targets; inputs is prepared in CPU workers
+            print(f'Pushing inputs and targets to batch_storage!')
             self.batch_storage.push([inputs_batch, targets_batch])
 
     def run(self):

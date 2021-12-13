@@ -40,7 +40,7 @@ class CartPoleConfig(BaseConfig):
             lr_decay_steps=1000,
             auto_td_steps_ratio=0.3,
             # replay window
-            start_transitions=8,
+            start_transitions=1,
             total_transitions=100000,
             transition_num=1,
             # frame skip & stack observation
@@ -75,6 +75,7 @@ class CartPoleConfig(BaseConfig):
         self.num_hidden = 64
         
         self.augmentation = False
+        self.use_augmentation = False
 
     def visit_softmax_temperature_fn(self, num_moves, trained_steps):
         if self.change_temperature:

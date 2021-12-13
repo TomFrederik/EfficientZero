@@ -41,7 +41,9 @@ class MCTS(object):
             min_max_stats_lst.set_delta(self.config.value_delta_max)
             horizons = self.config.lstm_horizon_len
 
+            # print('arrived in search')
             for index_simulation in range(self.config.num_simulations):
+                # print(f'{index_simulation = }')
                 hidden_states = []
                 hidden_states_c_reward = []
                 hidden_states_h_reward = []
@@ -53,8 +55,10 @@ class MCTS(object):
                 # hidden_state_index_y_lst: the second index of leaf node states in hidden_state_pool
                 # the hidden state of the leaf node is hidden_state_pool[x, y]; value prefix states are the same
                 hidden_state_index_x_lst, hidden_state_index_y_lst, last_actions = tree.batch_traverse(roots, pb_c_base, pb_c_init, discount, min_max_stats_lst, results)
+                # print('batch traverse done')
                 # obtain the search horizon for leaf nodes
                 search_lens = results.get_search_len()
+                # print(f'{search_lens = }')
 
                 # obtain the states for leaf nodes
                 for ix, iy in zip(hidden_state_index_x_lst, hidden_state_index_y_lst):
@@ -69,12 +73,13 @@ class MCTS(object):
                 last_actions = torch.from_numpy(np.asarray(last_actions)).to(device).unsqueeze(1).long()
 
                 # evaluation for leaf nodes
+                # print('starting recurrent inference!')
                 if self.config.amp_type == 'torch_amp':
                     with autocast():
                         network_output = model.recurrent_inference(hidden_states, (hidden_states_c_reward, hidden_states_h_reward), last_actions)
                 else:
                     network_output = model.recurrent_inference(hidden_states, (hidden_states_c_reward, hidden_states_h_reward), last_actions)
-
+                # print(f'{network_output = }')
                 hidden_state_nodes = network_output.hidden_state
                 value_prefix_pool = network_output.value_prefix.reshape(-1).tolist()
                 value_pool = network_output.value.reshape(-1).tolist()

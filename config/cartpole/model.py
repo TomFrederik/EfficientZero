@@ -81,7 +81,15 @@ class RepresentationNetwork(nn.Module):
         self.net = nn.Sequential(*modules)
         
     def forward(self, x):
-        self.net(x)
+        # print(f'{x.shape = }')
+        B, T, D = x.shape
+        x = x.reshape((B, T*D))
+        # print(f'{x.shape = }')
+        x = self.net(x)
+        # print(f'{x.shape = }')
+        # x = x.reshape((B, T, -1))
+        # print(f'{x.shape = }')
+        return x
 
     def get_param_mean(self):
         mean = []
@@ -120,15 +128,16 @@ class DynamicsNetwork(nn.Module):
         self.num_channels = num_channels
         
         self.lstm_hidden_size = lstm_hidden_size
-
+        # print(f'lstm input size = {self.num_channels}')
+        # print(f'{self.lstm_hidden_size = }')
         self.lstm = nn.LSTM(input_size=num_channels, hidden_size=self.lstm_hidden_size)
         self.bn_value_prefix = nn.BatchNorm1d(self.lstm_hidden_size, momentum=momentum)
         self.fc = MLP(self.lstm_hidden_size, fc_reward_layers, full_support_size, init_zero=init_zero, momentum=momentum)
 
     def forward(self, x, reward_hidden):
-        state = x[:,:-1,:,:]
-        print(f'DynamicsModel.forward: state shape: {state.shape}')
-        
+        state = x[:,:-1]
+        x = x.unsqueeze(0)
+
         value_prefix, reward_hidden = self.lstm(x, reward_hidden)
         value_prefix = value_prefix.squeeze(0)
         value_prefix = self.bn_value_prefix(value_prefix)
@@ -188,12 +197,24 @@ class PredictionNetwork(nn.Module):
         """
         super().__init__()
         # maybe use 1d Batchnorm before passing input to MLPs?
+        # print(f"{num_channels = }")
         self.fc_value = MLP(num_channels, fc_value_layers, full_support_size, init_zero=init_zero, momentum=momentum)
         self.fc_policy = MLP(num_channels, fc_policy_layers, action_space_size, init_zero=init_zero, momentum=momentum)
 
     def forward(self, x):
+        x = x.squeeze()
+        # print(f"{x.shape = }")
+        # print(self.fc_policy)
+        # print(self.fc_value)
+        # B, T, D = x.shape
+        # x = x.reshape((B, T*D))
+        # print(f"{x.shape = }")
         value = self.fc_value(x)
         policy = self.fc_policy(x)
+        # print(f"{value.shape = }")
+        # print(f"{policy.shape = }")
+        # value = value.reshape((B, T, -1))
+        # policy = policy.reshape((B, T, -1))
         return policy, value
 
 
@@ -224,8 +245,8 @@ class EfficientZeroNet(BaseNet):
         """EfficientZero network
         Parameters
         ----------
-        num_obs_channels: tuple or list
-            shape of observations: [C, W, H]
+        num_obs_channels: int
+            number of observations
         action_space_size: int
             action space
         num_channels: int
@@ -322,11 +343,16 @@ class EfficientZeroNet(BaseNet):
         return policy, value
 
     def representation(self, observation):
+        observation = observation.squeeze()
+        # print(f'{observation.shape = }')
         encoded_state = self.representation_network(observation)
+        # print(f'{encoded_state = }')
         if not self.state_norm:
+            # print('not normalizing!')
             return encoded_state
         else:
             encoded_state_normalized = renormalize(encoded_state)
+            # print(f'{encoded_state_normalized = }')
             return encoded_state_normalized
 
     def dynamics(self, encoded_state, reward_hidden, action):
@@ -341,12 +367,16 @@ class EfficientZeroNet(BaseNet):
             .to(action.device)
             .float()
         )
+        # print(f'{action.shape = }')
+        # print(f'{action_one_hot.shape = }')
         action_one_hot = (
             action * action_one_hot / self.action_space_size
         )
+        # print(f'{action_one_hot.shape = }')
         x = torch.cat((encoded_state, action_one_hot), dim=1)
+        # print(f'{x.shape = }')
         next_encoded_state, reward_hidden, value_prefix = self.dynamics_network(x, reward_hidden)
-
+        # print(f'{next_encoded_state.shape = }')
         if not self.state_norm:
             return next_encoded_state, reward_hidden, value_prefix
         else:

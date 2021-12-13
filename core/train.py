@@ -65,14 +65,26 @@ def update_weights(model, batch, optimizer, replay_buffer, config, scaler, vis_r
     # obs_batch is the observation for hat s_t (predicted hidden states from dynamics function)
     # obs_target_batch is the observations for s_t (hidden states from representation function)
     # to save GPU memory usage, obs_batch_ori contains (stack + unroll steps) frames
-    obs_batch_ori = torch.from_numpy(obs_batch_ori).to(config.device).float() / 255.0
-    obs_batch = obs_batch_ori[:, 0: config.stacked_observations * config.image_channel, :, :]
-    obs_target_batch = obs_batch_ori[:, config.image_channel:, :, :]
+    
+    # this only works for image obs
+    # obs_batch_ori = torch.from_numpy(obs_batch_ori).to(config.device).float() / 255.0
+    # obs_batch = obs_batch_ori[:, 0: config.stacked_observations * config.image_channel, :, :]
+    # obs_target_batch = obs_batch_ori[:, config.image_channel:, :, :]
 
+    obs_batch_ori = torch.from_numpy(obs_batch_ori).to(config.device).float()
+    obs_batch = obs_batch_ori[:, 0:config.stacked_observations*4]
+    obs_target_batch = obs_batch_ori[:, 4:]
+    print(f"{obs_batch_ori.shape = }")
+    print(f"{obs_batch.shape = }")
+    print(f"{obs_target_batch.shape = }")
+    
     # do augmentations
+    # print(f'{config.use_augmentation}')
     if config.use_augmentation:
-        obs_batch = config.transform(obs_batch)
-        obs_target_batch = config.transform(obs_target_batch)
+        # skipping this, can't skip otherwise
+        # obs_batch = config.transform(obs_batch)
+        # obs_target_batch = config.transform(obs_target_batch)
+        pass
 
     # use GPU tensor
     action_batch = torch.from_numpy(action_batch).to(config.device).unsqueeze(-1).long()
@@ -358,10 +370,9 @@ def _train(model, target_model, replay_buffer, shared_storage, batch_storage, co
         config.set_transforms()
 
     # wait until collecting enough data to start
-    # while not (ray.get(replay_buffer.get_total_len.remote()) >= config.start_transitions):
-    #     time.sleep(1)
-    #     print(ray.get(replay_buffer.get_total_len.remote()))
-    #     pass
+    while not (ray.get(replay_buffer.get_total_len.remote()) >= config.start_transitions):
+        time.sleep(1)
+        pass
     print('Begin training...')
     # set signals for other workers
     shared_storage.set_start_signal.remote()
@@ -370,16 +381,20 @@ def _train(model, target_model, replay_buffer, shared_storage, batch_storage, co
     # Note: the interval of the current model and the target model is between x and 2x. (x = target_model_interval)
     # recent_weights is the param of the target model
     recent_weights = model.get_weights()
-
     # while loop
     while step_count < config.training_steps + config.last_steps:
+        print(f'{step_count = }')
         # remove data if the replay buffer is full. (more data settings)
         if step_count % 1000 == 0:
             replay_buffer.remove_to_fit.remote()
+        print(f'{len(ray.get(replay_buffer.get_priorities.remote())) = }')
 
         # obtain a batch
         batch = batch_storage.pop()
+        # print(f'{batch_storage.get_len() = }')
+        # print(f'{batch = }')
         if batch is None:
+            print('batch is none')
             time.sleep(0.3)
             continue
         shared_storage.incr_counter.remote()

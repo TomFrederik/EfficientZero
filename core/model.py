@@ -80,27 +80,42 @@ class BaseNet(nn.Module):
 
     def initial_inference(self, obs) -> NetworkOutput:
         num = obs.size(0)
-
+        # print(f'{num = }')
         state = self.representation(obs)
+        # print(f'{state = }')
         actor_logit, value = self.prediction(state)
+        # print(f'{actor_logit = }')
+        # print(f'{value = }')
 
         if not self.training:
+            # print('not in training')
             # if not in training, obtain the scalars of the value/reward
             value = self.inverse_value_transform(value).detach().cpu().numpy()
+            # print(f'{value = }')
             state = state.detach().cpu().numpy()
+            # print(f'{state = }')
             actor_logit = actor_logit.detach().cpu().numpy()
+            # print(f'{actor_logit = }')
             # zero initialization for reward (value prefix) hidden states
             reward_hidden = (torch.zeros(1, num, self.lstm_hidden_size).detach().cpu().numpy(),
                              torch.zeros(1, num, self.lstm_hidden_size).detach().cpu().numpy())
         else:
             # zero initialization for reward (value prefix) hidden states
             reward_hidden = (torch.zeros(1, num, self.lstm_hidden_size).to('cuda'), torch.zeros(1, num, self.lstm_hidden_size).to('cuda'))
-
+        # print(f'{reward_hidden = }')
         return NetworkOutput(value, [0. for _ in range(num)], actor_logit, state, reward_hidden)
 
     def recurrent_inference(self, hidden_state, reward_hidden, action) -> NetworkOutput:
+        # print(f'{hidden_state.shape = }')
+        # print(f'{reward_hidden[0].shape = }')
+        # print(f'{action.shape = }')
         state, reward_hidden, value_prefix = self.dynamics(hidden_state, reward_hidden, action)
+        # print(f'{state.shape = }')
+        # print(f'{reward_hidden = }')
+        # print(f'{value_prefix.shape = }')
         actor_logit, value = self.prediction(state)
+        # print(f'{actor_logit.shape = }')
+        # print(f'{value.shape = }')
 
         if not self.training:
             # if not in training, obtain the scalars of the value/reward
